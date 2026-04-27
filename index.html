@@ -386,7 +386,6 @@
 
                 <div class="results-video-panel">
                     <video
-                        id="results-video"
                         class="results-video"
                         autoplay
                         controls
@@ -398,7 +397,6 @@
                         controlslist="nodownload"
                     >
                         <source
-                            id="results-video-source"
                             src="./static/videos/03ed79a9-e100-5e9b-acf1-c17a7473acaf_comparison_h264.mp4"
                             type="video/mp4"
                         />
@@ -508,6 +506,87 @@
                             </video>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section results-section">
+            <div class="container is-max-desktop">
+                <h2 class="title is-2 results-title">Results</h2>
+                <h3 class="title is-3 results-heading">
+                    Motion sequences from AMASS Dataset
+                </h3>
+                <p class="results-description">
+                    We compare our method with NeMF on a wide variety of unseen
+                    motions from AMASS.
+                </p>
+
+                <h4 class="title is-3 has-text-centered results-subheading">
+                    Clips
+                </h4>
+
+                <div class="tabs is-centered is-boxed results-tabs">
+                    <ul>
+                        <li class="is-active">
+                            <a
+                                href="#"
+                                data-video="./static/videos/AMASS/clip_013.mp4"
+                                >Clip 13</a
+                            >
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                data-video="./static/videos/AMASS/clip_014.mp4"
+                                >Clip 14</a
+                            >
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                data-video="./static/videos/AMASS/clip_082.mp4"
+                                >Clip 82</a
+                            >
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                data-video="./static/videos/AMASS/clip_097.mp4"
+                                >Clip 97</a
+                            >
+                        </li>
+
+                        <li>
+                            <a
+                                href="#"
+                                data-video="./static/videos/AMASS/clip_102.mp4"
+                                >Clip 102</a
+                            >
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="results-video-panel">
+                    <video
+                        class="results-video"
+                        autoplay
+                        controls
+                        muted
+                        loop
+                        playsinline
+                        preload="metadata"
+                        disablepictureinpicture
+                        controlslist="nodownload"
+                    >
+                        <source
+                            src="./static/videos/AMASS/clip_013.mp4"
+                            type="video/mp4"
+                        />
+                        Your browser does not support the video tag.
+                    </video>
                 </div>
             </div>
         </section>
