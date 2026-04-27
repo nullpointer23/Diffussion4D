@@ -78,19 +78,12 @@ $(document).ready(function () {
     $(".results-section").each(function () {
         var section = this;
         var panel = section.querySelector(".results-video-panel");
-        var initialVideo = section.querySelector(
+        var activeVideo = section.querySelector(
             ".results-video-panel .results-video",
         );
-        if (!panel || !initialVideo) {
+        if (!panel || !activeVideo) {
             return;
         }
-
-        var hiddenVideo = initialVideo.cloneNode(true);
-        hiddenVideo.classList.add("is-hidden");
-        panel.appendChild(hiddenVideo);
-
-        var activeVideo = initialVideo;
-        var standbyVideo = hiddenVideo;
 
         var getSourceEl = function (videoEl) {
             var sourceEl = videoEl.querySelector("source");
@@ -103,8 +96,18 @@ $(document).ready(function () {
         };
 
         var getSourceSrc = function (videoEl) {
+            return (
+                videoEl.getAttribute("src") ||
+                videoEl.currentSrc ||
+                getSourceEl(videoEl).getAttribute("src") ||
+                ""
+            );
+        };
+
+        var setVideoSource = function (videoEl, src) {
             var sourceEl = getSourceEl(videoEl);
-            return sourceEl.getAttribute("src") || "";
+            sourceEl.setAttribute("src", src);
+            videoEl.setAttribute("src", src);
         };
 
         $(section)
@@ -129,16 +132,30 @@ $(document).ready(function () {
                     clearTimeout(section._switchFallbackTimer);
                 }
 
-                var standbySource = getSourceEl(standbyVideo);
-                standbySource.setAttribute("src", nextSource);
-                standbyVideo.load();
+                var nextVideo = activeVideo.cloneNode(true);
+                nextVideo.classList.add("is-hidden");
+                setVideoSource(nextVideo, nextSource);
+                panel.appendChild(nextVideo);
+                nextVideo.load();
+
+                var didSwap = false;
 
                 var swapIfCurrent = function () {
-                    if (String(nextToken) !== section.dataset.switchToken) {
+                    if (didSwap) {
                         return;
                     }
+                    if (String(nextToken) !== section.dataset.switchToken) {
+                        nextVideo.remove();
+                        return;
+                    }
+                    didSwap = true;
 
-                    var playPromise = standbyVideo.play();
+                    if (section._switchFallbackTimer) {
+                        clearTimeout(section._switchFallbackTimer);
+                        section._switchFallbackTimer = null;
+                    }
+
+                    var playPromise = nextVideo.play();
                     if (
                         playPromise &&
                         typeof playPromise.catch === "function"
@@ -149,26 +166,25 @@ $(document).ready(function () {
                     }
 
                     activeVideo.pause();
-                    activeVideo.classList.add("is-hidden");
-                    standbyVideo.classList.remove("is-hidden");
-
-                    var previousActive = activeVideo;
-                    activeVideo = standbyVideo;
-                    standbyVideo = previousActive;
+                    activeVideo.remove();
+                    nextVideo.classList.remove("is-hidden");
+                    activeVideo = nextVideo;
                 };
 
                 var onCanPlay = function () {
                     swapIfCurrent();
                 };
 
-                standbyVideo.addEventListener("canplay", onCanPlay, {
+                nextVideo.addEventListener("canplay", onCanPlay, {
                     once: true,
                 });
 
                 // Fallback in case the ready event is delayed on some browsers.
                 section._switchFallbackTimer = setTimeout(function () {
-                    swapIfCurrent();
-                }, 1000);
+                    if (nextVideo.readyState >= 2) {
+                        swapIfCurrent();
+                    }
+                }, 1200);
             });
     });
 
