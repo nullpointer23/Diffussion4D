@@ -211,6 +211,10 @@ body {
     background: #cfcfcf;
 }
 
+.results-video.is-hidden {
+    display: none;
+}
+
 @media screen and (max-width: 768px) {
     .results-title {
         font-size: 2rem !important;
