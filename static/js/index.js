@@ -75,32 +75,102 @@ $(document).ready(function () {
     setInterpolationImage(0);
     $("#interpolation-slider").prop("max", NUM_INTERP_FRAMES - 1);
 
-    var resultsVideo = document.getElementById("results-video");
-    var resultsVideoSource = document.getElementById("results-video-source");
-    if (resultsVideo && resultsVideoSource) {
-        $(".results-tabs a[data-video]").on("click", function (event) {
-            event.preventDefault();
+    $(".results-section").each(function () {
+        var section = this;
+        var panel = section.querySelector(".results-video-panel");
+        var initialVideo = section.querySelector(
+            ".results-video-panel .results-video",
+        );
+        if (!panel || !initialVideo) {
+            return;
+        }
 
-            var nextSource = this.dataset.video;
-            var currentSource = resultsVideoSource.getAttribute("src");
-            if (!nextSource || nextSource === currentSource) {
-                return;
+        var hiddenVideo = initialVideo.cloneNode(true);
+        hiddenVideo.classList.add("is-hidden");
+        panel.appendChild(hiddenVideo);
+
+        var activeVideo = initialVideo;
+        var standbyVideo = hiddenVideo;
+
+        var getSourceEl = function (videoEl) {
+            var sourceEl = videoEl.querySelector("source");
+            if (!sourceEl) {
+                sourceEl = document.createElement("source");
+                sourceEl.type = "video/mp4";
+                videoEl.appendChild(sourceEl);
             }
+            return sourceEl;
+        };
 
-            $(".results-tabs li").removeClass("is-active");
-            $(this).parent().addClass("is-active");
+        var getSourceSrc = function (videoEl) {
+            var sourceEl = getSourceEl(videoEl);
+            return sourceEl.getAttribute("src") || "";
+        };
 
-            resultsVideoSource.src = nextSource;
-            resultsVideo.load();
+        $(section)
+            .find(".results-tabs a[data-video]")
+            .on("click", function (event) {
+                event.preventDefault();
 
-            var playPromise = resultsVideo.play();
-            if (playPromise && typeof playPromise.catch === "function") {
-                playPromise.catch(function () {
-                    // Ignore autoplay restrictions; controls allow manual play.
+                var nextSource = this.dataset.video;
+                var currentSource = getSourceSrc(activeVideo);
+                if (!nextSource || nextSource === currentSource) {
+                    return;
+                }
+
+                $(this).closest("ul").find("li").removeClass("is-active");
+                $(this).parent().addClass("is-active");
+
+                // Guard against rapid tab changes: only the latest click can swap videos.
+                var nextToken = Number(section.dataset.switchToken || 0) + 1;
+                section.dataset.switchToken = String(nextToken);
+
+                if (section._switchFallbackTimer) {
+                    clearTimeout(section._switchFallbackTimer);
+                }
+
+                var standbySource = getSourceEl(standbyVideo);
+                standbySource.setAttribute("src", nextSource);
+                standbyVideo.load();
+
+                var swapIfCurrent = function () {
+                    if (String(nextToken) !== section.dataset.switchToken) {
+                        return;
+                    }
+
+                    var playPromise = standbyVideo.play();
+                    if (
+                        playPromise &&
+                        typeof playPromise.catch === "function"
+                    ) {
+                        playPromise.catch(function () {
+                            // Ignore autoplay restrictions; controls allow manual play.
+                        });
+                    }
+
+                    activeVideo.pause();
+                    activeVideo.classList.add("is-hidden");
+                    standbyVideo.classList.remove("is-hidden");
+
+                    var previousActive = activeVideo;
+                    activeVideo = standbyVideo;
+                    standbyVideo = previousActive;
+                };
+
+                var onCanPlay = function () {
+                    swapIfCurrent();
+                };
+
+                standbyVideo.addEventListener("canplay", onCanPlay, {
+                    once: true,
                 });
-            }
-        });
-    }
+
+                // Fallback in case the ready event is delayed on some browsers.
+                section._switchFallbackTimer = setTimeout(function () {
+                    swapIfCurrent();
+                }, 1000);
+            });
+    });
 
     bulmaSlider.attach();
 });
